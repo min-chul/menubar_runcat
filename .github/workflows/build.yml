@@ -9,20 +9,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build (unsigned/ad-hoc)
+      - name: Build (ad-hoc signed)
         run: |
           xcodebuild -project "Menubar RunCat.xcodeproj" \
             -scheme "Menubar RunCat" \
             -configuration Release \
             CODE_SIGN_IDENTITY="-" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGNING_REQUIRED=YES \
+            CODE_SIGNING_ALLOWED=YES \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            DEVELOPMENT_TEAM="" \
             -derivedDataPath build
+
+      - name: Verify signature
+        run: |
+          codesign --force --deep --sign - "build/Build/Products/Release/Menubar RunCat.app"
+          codesign -dv "build/Build/Products/Release/Menubar RunCat.app"
 
       - name: Zip app
         run: |
           cd build/Build/Products/Release
-          zip -r MenubarRunCat.zip "Menubar RunCat.app"
+          ditto -c -k --sequesterRsrc --keepParent "Menubar RunCat.app" MenubarRunCat.zip
 
       - uses: actions/upload-artifact@v4
         with:
